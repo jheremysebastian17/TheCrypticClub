@@ -21,34 +21,35 @@
         <button class="tab" role="tab" data-target="archivo" aria-selected="false">Archivo</button>
         <button class="tab" role="tab" data-target="rush" aria-selected="false">Contrarreloj</button>
         <button class="tab" role="tab" data-target="logros" aria-selected="false">Logros</button>
+        <button class="tab" role="tab" data-target="perfil" aria-selected="false">Perfil</button>
         <button class="tab" role="tab" data-target="lab" aria-selected="false">IA Lab &amp; Comunidad</button>
+        <button class="tab" role="tab" data-target="versus" aria-selected="false">Modo 1v1</button>
       </nav>
 
       <button class="btn btn-ghost btn-sm" id="btn-help" type="button">¿Cómo se juega?</button>
     </header>
 
     <main class="main">
-      <!-- A. Hoy -->
       <section class="view is-active" data-view="hoy" aria-label="Reto diario">
         <div id="hoy-root" class="container"></div>
       </section>
 
-      <!-- B. Archivo -->
-      <section class="view" data-view="archivo" aria-label="Archivo">
+      <section class="view" data-view="archivo" aria-label="Archivo histórico">
         <div id="archivo-root" class="container"></div>
       </section>
 
-      <!-- C. Contrarreloj -->
       <section class="view" data-view="rush" aria-label="Contrarreloj">
         <div id="rush-root" class="container"></div>
       </section>
 
-      <!-- D. Logros -->
       <section class="view" data-view="logros" aria-label="Logros">
         <div id="logros-root" class="container"></div>
       </section>
 
-      <!-- E. IA Lab & Comunidad -->
+      <section class="view" data-view="perfil" aria-label="Perfil">
+        <div id="perfil-root" class="container"></div>
+      </section>
+
       <section class="view" data-view="lab" aria-label="IA Lab y Comunidad">
         <nav class="subtabs" role="tablist" aria-label="Subsecciones">
           <button class="subtab is-active" role="tab" data-sub="comunidad" aria-selected="true">Comunidad</button>
@@ -61,10 +62,14 @@
           <div id="lab-ia-root" class="container"></div>
         </div>
       </section>
+
+      <section class="view" data-view="versus" aria-label="Modo 1v1">
+        <div id="versus-root" class="container"></div>
+      </section>
     </main>
   </div>
 
-  <!-- F. Modal ¿Cómo se juega? -->
+  <!-- Modal ¿Cómo se juega? -->
   <div class="modal" id="modal-help" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="help-title">
       <button class="modal-close" type="button" data-close-modal aria-label="Cerrar">×</button>
@@ -72,15 +77,15 @@
       <ol class="steps">
         <li>
           <span class="step-n">1</span>
-          <p>Lee la pista. La longitud de la respuesta aparece entre paréntesis.</p>
+          <p>Lee la pista. La longitud de la respuesta aparece entre paréntesis. Puedes pedir hasta 3 ayudas, que revelan una letra cada una.</p>
         </li>
         <li>
           <span class="step-n">2</span>
-          <p>Escribe la solución letra a letra, o pégala de una vez, y pulsa Enter para comprobarla.</p>
+          <p>Escribe la solución letra a letra o pégala de una vez, y pulsa Enter para comprobarla.</p>
         </li>
         <li>
           <span class="step-n">3</span>
-          <p>Si te atascas, pide una ayuda. Resuelve el reto del día antes de medianoche (hora de Madrid) para mantener tu racha.</p>
+          <p>Al resolverlo verás cómo se construye la pista, tu tiempo y tus ayudas. Resuelve el reto del día antes de medianoche (hora de Madrid) para mantener tu racha.</p>
         </li>
       </ol>
       <button class="btn btn-primary" type="button" data-close-modal>Entendido</button>
@@ -89,7 +94,11 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <!-- PeerJS (WebRTC) vía CDN, versión fijada -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="database.js"></script>
+  <script src="generator.js"></script>
+  <script src="p2p.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
