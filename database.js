@@ -1,40 +1,78 @@
-/* The Cryptic Club — base de datos simulada.
+/* The Cryptic Club — catálogo manual.
  * Campos:
- *  id        identificador único
- *  fecha     día de publicación (YYYY-MM-DD, hora de Madrid)
- *  pista     texto de la pista
- *  longitud  número de letras de la respuesta
- *  respuesta solución (sin espacios; acentos permitidos, se normalizan)
- *  tipo      'comunidad' | 'ia'
- *  capas     (solo 'ia') { semantica, estructura }
- */
+ *  id, fecha (YYYY-MM-DD, hora de Madrid), pista (sin longitud), longitud, respuesta,
+ *  tipo ('comunidad' | 'ia'), dificultad ('facil' | 'medio' | 'dificil'),
+ *  desglose { definicion, indicador, material } — cada valor aparece literal en la pista,
+ *  capas (solo 'ia') { semantica, estructura }.
+ * Si un día no tiene entrada aquí, GeneradorProceduralIA() produce el acertijo. */
 const PUZZLES = [
-  {
-    id: 'p-001',
-    fecha: '2026-10-22',
-    pista: 'Me miras y me ves, pero nunca me tocas.',
-    longitud: 6,
-    respuesta: 'ESPEJO',
-    tipo: 'comunidad'
-  },
-  {
-    id: 'p-002',
-    fecha: '2026-10-23',
-    pista: 'Sin pies camino, sin boca marco las horas.',
-    longitud: 5,
-    respuesta: 'RELOJ',
-    tipo: 'ia',
-    capas: {
-      semantica: 'Objeto doméstico que indica la hora del día.',
-      estructura: 'Cinco letras. Empieza por R y termina en J.'
-    }
-  },
-  {
-    id: 'p-003',
-    fecha: '2026-10-24',
-    pista: 'Te sigue a todas partes, pero solo aparece cuando hay luz.',
-    longitud: 6,
-    respuesta: 'SOMBRA',
-    tipo: 'comunidad'
-  }
+  { id: 'p-01', fecha: '2026-10-20', pista: 'Roma revuelta da un sentimiento', longitud: 4, respuesta: 'AMOR', tipo: 'comunidad', dificultad: 'facil',
+    desglose: { definicion: 'un sentimiento', indicador: 'revuelta', material: 'Roma' } },
+  { id: 'p-02', fecha: '2026-10-21', pista: 'Lugar de reunión: alas al revés', longitud: 4, respuesta: 'SALA', tipo: 'comunidad', dificultad: 'facil',
+    desglose: { definicion: 'Lugar de reunión', indicador: 'al revés', material: 'alas' } },
+  { id: 'p-03', fecha: '2026-10-22', pista: 'Me miras y me ves, pero nunca me tocas', longitud: 6, respuesta: 'ESPEJO', tipo: 'comunidad', dificultad: 'medio',
+    desglose: { definicion: 'Me miras y me ves, pero nunca me tocas' } },
+  { id: 'p-04', fecha: '2026-10-23', pista: 'Sin pies camino, sin boca marco las horas', longitud: 5, respuesta: 'RELOJ', tipo: 'ia', dificultad: 'medio',
+    desglose: { definicion: 'marco las horas' },
+    capas: { semantica: 'Aparato que mide el tiempo y suele colgar de la pared o llevarse en la muñeca.', estructura: '5 letras. Empieza por R y termina en J.' } },
+  { id: 'p-05', fecha: '2026-10-24', pista: 'Te sigue a todas partes, pero solo aparece cuando hay luz', longitud: 6, respuesta: 'SOMBRA', tipo: 'comunidad', dificultad: 'medio',
+    desglose: { definicion: 'Te sigue a todas partes, pero solo aparece cuando hay luz' } },
+  { id: 'p-06', fecha: '2026-10-25', pista: 'Bolo revuelto, animal salvaje', longitud: 4, respuesta: 'LOBO', tipo: 'comunidad', dificultad: 'facil',
+    desglose: { definicion: 'animal salvaje', indicador: 'revuelto', material: 'Bolo' } },
+  { id: 'p-07', fecha: '2026-10-26', pista: 'Dentro de gato rosa, un animal grande', longitud: 4, respuesta: 'TORO', tipo: 'ia', dificultad: 'medio',
+    desglose: { definicion: 'un animal grande', indicador: 'Dentro de', material: 'gato rosa' },
+    capas: { semantica: 'Mamífero bovino de gran tamaño, símbolo de la corrida.', estructura: '4 letras. Empieza por T y termina en O.' } },
+  { id: 'p-08', fecha: '2026-10-27', pista: 'Sal con aumento de tamaño: sala grande', longitud: 5, respuesta: 'SALON', tipo: 'comunidad', dificultad: 'medio',
+    desglose: { definicion: 'sala grande', indicador: 'con aumento de tamaño', material: 'Sal' } },
+  { id: 'p-09', fecha: '2026-10-28', pista: 'Calvo en desorden: pieza de metal', longitud: 5, respuesta: 'CLAVO', tipo: 'comunidad', dificultad: 'facil',
+    desglose: { definicion: 'pieza de metal', indicador: 'en desorden', material: 'Calvo' } },
+  { id: 'p-10', fecha: '2026-10-29', pista: 'Tocan desordenados, canción', longitud: 5, respuesta: 'CANTO', tipo: 'comunidad', dificultad: 'facil',
+    desglose: { definicion: 'canción', indicador: 'desordenados', material: 'Tocan' } },
+  { id: 'p-11', fecha: '2026-10-30', pista: 'Las, hacia atrás: condimento', longitud: 3, respuesta: 'SAL', tipo: 'comunidad', dificultad: 'facil',
+    desglose: { definicion: 'condimento', indicador: 'hacia atrás', material: 'Las' } },
+  { id: 'p-12', fecha: '2026-10-31', pista: 'Par con te, un fragmento', longitud: 5, respuesta: 'PARTE', tipo: 'comunidad', dificultad: 'medio',
+    desglose: { definicion: 'un fragmento', indicador: 'con', material: 'Par' } },
+  { id: 'p-13', fecha: '2026-11-01', pista: 'Paso desordenado, anfibio', longitud: 4, respuesta: 'SAPO', tipo: 'ia', dificultad: 'facil',
+    desglose: { definicion: 'anfibio', indicador: 'desordenado', material: 'Paso' },
+    capas: { semantica: 'Anfibio de piel rugosa que vive cerca del agua.', estructura: '4 letras. Empieza por S y termina en O.' } },
+  { id: 'p-14', fecha: '2026-11-02', pista: 'Dentro de ayuda marina, lo que baña las costas', longitud: 3, respuesta: 'MAR', tipo: 'comunidad', dificultad: 'medio',
+    desglose: { definicion: 'lo que baña las costas', indicador: 'Dentro de', material: 'ayuda marina' } },
+  { id: 'p-15', fecha: '2026-11-03', pista: 'Pardo desordenado, pasto verde para vacas', longitud: 5, respuesta: 'PRADO', tipo: 'comunidad', dificultad: 'facil',
+    desglose: { definicion: 'pasto verde para vacas', indicador: 'desordenado', material: 'Pardo' } },
+  { id: 'p-16', fecha: '2026-11-04', pista: 'Erre con osa, flor espinosa', longitud: 4, respuesta: 'ROSA', tipo: 'ia', dificultad: 'medio',
+    desglose: { definicion: 'flor espinosa', indicador: 'con', material: 'Erre' },
+    capas: { semantica: 'Flor de muchas espinas y colores muy variados.', estructura: '4 letras. Empieza por R y termina en A.' } },
+  { id: 'p-17', fecha: '2026-11-05', pista: 'Lama mezclada, ser espiritual', longitud: 4, respuesta: 'ALMA', tipo: 'comunidad', dificultad: 'facil',
+    desglose: { definicion: 'ser espiritual', indicador: 'mezclada', material: 'Lama' } },
+  { id: 'p-18', fecha: '2026-11-06', pista: 'Trigo desordenado, un grito', longitud: 5, respuesta: 'GRITO', tipo: 'comunidad', dificultad: 'facil',
+    desglose: { definicion: 'un grito', indicador: 'desordenado', material: 'Trigo' } },
+  { id: 'p-19', fecha: '2026-11-07', pista: 'Buen desorden, nube blanca', longitud: 4, respuesta: 'NUBE', tipo: 'comunidad', dificultad: 'facil',
+    desglose: { definicion: 'nube blanca', indicador: 'desorden', material: 'Buen' } },
+  { id: 'p-20', fecha: '2026-11-08', pista: 'Dentro de barco, forma de un puente', longitud: 4, respuesta: 'ARCO', tipo: 'ia', dificultad: 'medio',
+    desglose: { definicion: 'forma de un puente', indicador: 'Dentro de', material: 'barco' },
+    capas: { semantica: 'Estructura curva que salva un vano y sostiene un puente.', estructura: '4 letras. Empieza por A y termina en O.' } },
+  { id: 'p-21', fecha: '2026-11-09', pista: 'Ulna revuelta, astro nocturno', longitud: 4, respuesta: 'LUNA', tipo: 'ia', dificultad: 'facil',
+    desglose: { definicion: 'astro nocturno', indicador: 'revuelta', material: 'Ulna' },
+    capas: { semantica: 'Satélite natural de la Tierra, visible de noche.', estructura: '4 letras. Empieza por L y termina en A.' } },
+  { id: 'p-22', fecha: '2026-11-10', pista: 'Tapa desordenada, extremidad de un animal', longitud: 4, respuesta: 'PATA', tipo: 'comunidad', dificultad: 'facil',
+    desglose: { definicion: 'extremidad de un animal', indicador: 'desordenada', material: 'Tapa' } },
+  { id: 'p-23', fecha: '2026-11-11', pista: 'Moras mezcladas, ramos', longitud: 5, respuesta: 'RAMOS', tipo: 'comunidad', dificultad: 'facil',
+    desglose: { definicion: 'ramos', indicador: 'mezcladas', material: 'Moras' } },
+  { id: 'p-24', fecha: '2026-11-12', pista: 'Ruta que se recorre a pie', longitud: 6, respuesta: 'CAMINO', tipo: 'comunidad', dificultad: 'medio',
+    desglose: { definicion: 'Ruta que se recorre a pie' } },
+  { id: 'p-25', fecha: '2026-11-13', pista: 'Toga desordenada, felino doméstico', longitud: 4, respuesta: 'GATO', tipo: 'ia', dificultad: 'facil',
+    desglose: { definicion: 'felino doméstico', indicador: 'desordenada', material: 'Toga' },
+    capas: { semantica: 'Felino doméstico muy popular como mascota.', estructura: '4 letras. Empieza por G y termina en O.' } },
+  { id: 'p-26', fecha: '2026-11-14', pista: 'Pierda revuelto, roca', longitud: 6, respuesta: 'PIEDRA', tipo: 'comunidad', dificultad: 'dificil',
+    desglose: { definicion: 'roca', indicador: 'revuelto', material: 'Pierda' } },
+  { id: 'p-27', fecha: '2026-11-15', pista: 'En ruta lima, capital peruana', longitud: 4, respuesta: 'LIMA', tipo: 'comunidad', dificultad: 'medio',
+    desglose: { definicion: 'capital peruana', indicador: 'En', material: 'ruta lima' } },
+  { id: 'p-28', fecha: '2026-11-16', pista: 'Coral desordenado, temperatura alta', longitud: 5, respuesta: 'CALOR', tipo: 'ia', dificultad: 'medio',
+    desglose: { definicion: 'temperatura alta', indicador: 'desordenado', material: 'Coral' },
+    capas: { semantica: 'Sensación térmica intensa, típica del verano.', estructura: '5 letras. Empieza por C y termina en R.' } },
+  { id: 'p-29', fecha: '2026-11-17', pista: 'Noel al revés, felino de melena', longitud: 4, respuesta: 'LEON', tipo: 'ia', dificultad: 'medio',
+    desglose: { definicion: 'felino de melena', indicador: 'al revés', material: 'Noel' },
+    capas: { semantica: 'Felino de melena imponente, rey de la selva en los cuentos.', estructura: '4 letras. Empieza por L y termina en N.' } },
+  { id: 'p-30', fecha: '2026-11-18', pista: 'En peso rojo, metal precioso', longitud: 3, respuesta: 'ORO', tipo: 'comunidad', dificultad: 'medio',
+    desglose: { definicion: 'metal precioso', indicador: 'En', material: 'peso rojo' } }
 ];
