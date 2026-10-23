@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="The Cryptic Club: un acertijo críptico al día." />
+  <title>The Cryptic Club</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">The Cryptic Club</div>
+
+      <nav class="tabs" role="tablist" aria-label="Secciones">
+        <button class="tab is-active" role="tab" data-target="hoy" aria-selected="true">Hoy</button>
+        <button class="tab" role="tab" data-target="archivo" aria-selected="false">Archivo</button>
+        <button class="tab" role="tab" data-target="rush" aria-selected="false">Contrarreloj</button>
+        <button class="tab" role="tab" data-target="logros" aria-selected="false">Logros</button>
+        <button class="tab" role="tab" data-target="lab" aria-selected="false">IA Lab &amp; Comunidad</button>
+      </nav>
+
+      <button class="btn btn-ghost btn-sm" id="btn-help" type="button">¿Cómo se juega?</button>
+    </header>
+
+    <main class="main">
+      <!-- A. Hoy -->
+      <section class="view is-active" data-view="hoy" aria-label="Reto diario">
+        <div id="hoy-root" class="container"></div>
+      </section>
+
+      <!-- B. Archivo -->
+      <section class="view" data-view="archivo" aria-label="Archivo">
+        <div id="archivo-root" class="container"></div>
+      </section>
+
+      <!-- C. Contrarreloj -->
+      <section class="view" data-view="rush" aria-label="Contrarreloj">
+        <div id="rush-root" class="container"></div>
+      </section>
+
+      <!-- D. Logros -->
+      <section class="view" data-view="logros" aria-label="Logros">
+        <div id="logros-root" class="container"></div>
+      </section>
+
+      <!-- E. IA Lab & Comunidad -->
+      <section class="view" data-view="lab" aria-label="IA Lab y Comunidad">
+        <nav class="subtabs" role="tablist" aria-label="Subsecciones">
+          <button class="subtab is-active" role="tab" data-sub="comunidad" aria-selected="true">Comunidad</button>
+          <button class="subtab" role="tab" data-sub="ia" aria-selected="false">IA Lab</button>
+        </nav>
+        <div class="subpanel" data-sub-panel="comunidad">
+          <div id="lab-comunidad-root" class="container"></div>
+        </div>
+        <div class="subpanel" data-sub-panel="ia" hidden>
+          <div id="lab-ia-root" class="container"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- F. Modal ¿Cómo se juega? -->
+  <div class="modal" id="modal-help" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <button class="modal-close" type="button" data-close-modal aria-label="Cerrar">×</button>
+      <h2 id="help-title" class="h2">¿Cómo se juega?</h2>
+      <ol class="steps">
+        <li>
+          <span class="step-n">1</span>
+          <p>Lee la pista. La longitud de la respuesta aparece entre paréntesis.</p>
+        </li>
+        <li>
+          <span class="step-n">2</span>
+          <p>Escribe la solución letra a letra, o pégala de una vez, y pulsa Enter para comprobarla.</p>
+        </li>
+        <li>
+          <span class="step-n">3</span>
+          <p>Si te atascas, pide una ayuda. Resuelve el reto del día antes de medianoche (hora de Madrid) para mantener tu racha.</p>
+        </li>
+      </ol>
+      <button class="btn btn-primary" type="button" data-close-modal>Entendido</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="database.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
