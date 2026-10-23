@@ -1,44 +1,47 @@
 /* The Cryptic Club — app.js
- * Estado, LocalStorage, navegación, reloj de Madrid y lógica de juego. */
+ * Núcleo: estado, LocalStorage, navegación, reloj de Madrid, juego, perfil y 1v1. */
 (() => {
   'use strict';
 
   // ---------- Configuración ----------
   const STORAGE_KEY = 'the-cryptic-club:v1';
   const TZ = 'Europe/Madrid';
+  const ARCHIVE_START = '2026-10-20';
+  const MAX_PISTAS = 3;
   const RUSH_SECONDS = 60;
   const RUSH_GAIN_MS = 3000;
   const RUSH_LOSS_MS = 2000;
+  const VS_LEN = 5;
+  const VS_COUNTDOWN = 3;
   const SEEDS_TOP = [
     { n: 'Mara', p: 14 }, { n: 'Dex', p: 12 }, { n: 'Ojo', p: 9 },
     { n: 'Vela', p: 7 }, { n: 'Ion', p: 5 }
   ];
   const CATEGORIES = ['Todos', 'Progreso', 'Maestría', 'Racha', 'Velocidad', 'Secretos'];
+  const DIF = { facil: 'Fácil', medio: 'Medio', dificil: 'Difícil' };
+  const DIAS = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+  const MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+  const SEMANA = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
   const ACHIEVEMENTS = [
-    // Progreso
     { id: 'primer-paso', cat: 'Progreso', titulo: 'Primer paso', descripcion: 'Resuelve tu primer acertijo.', key: 'resueltos', meta: 1 },
     { id: 'hilo-ariadna', cat: 'Progreso', titulo: 'Hilo de Ariadna', descripcion: 'Resuelve 10 acertijos.', key: 'resueltos', meta: 10 },
     { id: 'bibliotecario', cat: 'Progreso', titulo: 'Bibliotecario', descripcion: 'Resuelve 50 acertijos.', key: 'resueltos', meta: 50 },
     { id: 'arqueologo', cat: 'Progreso', titulo: 'Arqueólogo', descripcion: 'Resuelve 3 acertijos del Archivo.', key: 'archivoResueltos', meta: 3 },
     { id: 'voz-pueblo', cat: 'Progreso', titulo: 'Voz del pueblo', descripcion: 'Propón un acertijo a la comunidad.', key: 'propuestas', meta: 1 },
-    // Maestría
     { id: 'mente-limpia', cat: 'Maestría', titulo: 'Mente limpia', descripcion: 'Resuelve 5 sin pedir ayuda.', key: 'sinAyuda', meta: 5 },
     { id: 'ojo-halcon', cat: 'Maestría', titulo: 'Ojo de halcón', descripcion: 'Resuelve 20 sin pedir ayuda.', key: 'sinAyuda', meta: 20 },
     { id: 'cerebro-hibrido', cat: 'Maestría', titulo: 'Cerebro híbrido', descripcion: 'Resuelve 3 acertijos del IA Lab.', key: 'iaResueltos', meta: 3 },
     { id: 'doble-lectura', cat: 'Maestría', titulo: 'Doble lectura', descripcion: 'Revela la capa estructural de un acertijo IA.', key: 'capasUsadas', meta: 1 },
     { id: 'sin-titubeos', cat: 'Maestría', titulo: 'Sin titubeos', descripcion: 'Resuelve un acertijo al primer intento.', key: 'primerIntento', meta: 1 },
-    // Racha
     { id: 'costumbre', cat: 'Racha', titulo: 'Costumbre', descripcion: 'Alcanza una racha de 3 días.', key: 'racha', meta: 3 },
     { id: 'semana-perfecta', cat: 'Racha', titulo: 'Semana perfecta', descripcion: 'Alcanza una racha de 7 días.', key: 'racha', meta: 7 },
     { id: 'fiel-club', cat: 'Racha', titulo: 'Fiel al club', descripcion: 'Alcanza una racha de 14 días.', key: 'racha', meta: 14 },
     { id: 'inquebrantable', cat: 'Racha', titulo: 'Inquebrantable', descripcion: 'Alcanza una racha de 30 días.', key: 'racha', meta: 30 },
-    // Velocidad
     { id: 'primer-latido', cat: 'Velocidad', titulo: 'Primer latido', descripcion: 'Completa una partida de Contrarreloj.', key: 'rushPartidas', meta: 1 },
     { id: 'reloj-en-mano', cat: 'Velocidad', titulo: 'Reloj en mano', descripcion: 'Acierta 5 en una sola partida.', key: 'rushMejorSesion', meta: 5 },
     { id: 'cronometro-vivo', cat: 'Velocidad', titulo: 'Cronómetro vivo', descripcion: 'Acierta 10 en una sola partida.', key: 'rushMejorSesion', meta: 10 },
     { id: 'maestro-tiempo', cat: 'Velocidad', titulo: 'Maestro del tiempo', descripcion: 'Acierta 15 en una sola partida.', key: 'rushMejorSesion', meta: 15 },
-    // Secretos
     { id: 'buho', cat: 'Secretos', titulo: 'Búho', descripcion: 'Resuelve un acertijo entre las 00:00 y las 05:00 en Madrid.', key: 'nocturnos', meta: 1, secreto: true },
     { id: 'hermetico', cat: 'Secretos', titulo: 'Hermético', descripcion: 'Pide 10 ayudas en total.', key: 'ayudas', meta: 10, secreto: true },
     { id: 'fallo-honroso', cat: 'Secretos', titulo: 'Fallo honroso', descripcion: 'Falla 10 respuestas en Contrarreloj.', key: 'rushFallos', meta: 10, secreto: true },
@@ -75,7 +78,7 @@
     toastTimer = setTimeout(() => t.classList.remove('is-visible'), 2600);
   }
 
-  // ---------- Texto y fechas ----------
+  // ---------- Texto, fechas y tiempos ----------
   const normalize = (str = '') =>
     str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z]/g, '').toUpperCase();
 
@@ -95,14 +98,28 @@
     const [y, m, d] = key.split('-').map(Number);
     return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
   }
+  const utcNoon = (key) => {
+    const [y, m, d] = key.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d, 12));
+  };
+  const formatDateLong = (key) => {
+    const d = utcNoon(key);
+    return `${DIAS[d.getUTCDay()]} ${d.getUTCDate()} DE ${MESES[d.getUTCMonth()]}`;
+  };
+  const formatDateShort = (key) => {
+    const d = utcNoon(key);
+    return `${d.getUTCDate()} de ${MESES[d.getUTCMonth()].toLowerCase()}`;
+  };
+  const fmtTiempo = (ms) => {
+    if (ms === undefined || ms === null) return '--:--';
+    const s = Math.round(ms / 1000);
+    return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
+  };
 
-  // Desfase horario de Madrid (ms) en un instante concreto (CET/CEST)
   function madridOffsetMs(date) {
     const p = madridParts(date);
     return Date.UTC(p.y, p.m - 1, p.d, p.h, p.mi, p.s, date.getMilliseconds()) - date.getTime();
   }
-
-  // Milisegundos reales hasta la próxima medianoche de Madrid (con cambio de hora)
   function msUntilMadridMidnight(now = new Date()) {
     const p = madridParts(now);
     const wallNext = Date.UTC(p.y, p.m - 1, p.d + 1);
@@ -111,20 +128,16 @@
     return target - now.getTime();
   }
 
-  const dateFmtLong = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
-  const dateFmtShort = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
-  const utcNoon = (key) => { const [y, m, d] = key.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d, 12)); };
-  const formatDateLong = (key) => dateFmtLong.format(utcNoon(key)).replace(',', '').toUpperCase();
-  const formatDateShort = (key) => dateFmtShort.format(utcNoon(key));
-
-  // ---------- Almacenamiento ----------
+  // ---------- Estado y LocalStorage ----------
   const defaultState = () => ({
+    perfil: { nombre: 'Jugador' },
     progreso: {},
     racha: { actual: 0, mejor: 0, ultimo: null },
     rush: { mejor: 0 },
     contadores: {},
     propuestas: [],
-    desbloqueados: []
+    desbloqueados: [],
+    versus: { victorias: 0, derrotas: 0 }
   });
 
   function loadState() {
@@ -136,8 +149,10 @@
       return {
         ...base,
         ...s,
+        perfil: { ...base.perfil, ...s.perfil },
         racha: { ...base.racha, ...s.racha },
         rush: { ...base.rush, ...s.rush },
+        versus: { ...base.versus, ...s.versus },
         contadores: { ...s.contadores },
         progreso: { ...s.progreso }
       };
@@ -157,20 +172,22 @@
   let state = loadState();
 
   // ---------- Puzzles y progreso ----------
-  const sortedPuzzles = () => [...PUZZLES].sort((a, b) => a.fecha.localeCompare(b.fecha));
-
-  function getDailyPuzzle(key) {
-    const list = sortedPuzzles();
-    const past = list.filter((p) => p.fecha <= key);
-    return past.length ? past[past.length - 1] : list[0];
+  // Manual si existe para la fecha; si no, el motor procedural.
+  function getPuzzleForDate(key) {
+    return PUZZLES.find((p) => p.fecha === key) || GeneradorProceduralIA(key);
   }
 
-  function getProgress(id) {
-    if (!state.progreso[id]) {
-      state.progreso[id] = { resuelto: false, intentos: 0, ayudas: 0, revelados: [], capa2: false };
+  function getProgress(puzzle) {
+    if (!state.progreso[puzzle.id]) {
+      state.progreso[puzzle.id] = {
+        resuelto: false, intentos: 0, ayudas: 0, revelados: [],
+        capa2: false, fecha: puzzle.fecha
+      };
     }
-    return state.progreso[id];
+    return state.progreso[puzzle.id];
   }
+
+  const peekProgress = (id) => state.progreso[id] || {};
 
   // ---------- Racha ----------
   function effectiveStreak() {
@@ -222,14 +239,16 @@
     }
   }
 
-  // ---------- Tablero de juego (Hoy, Archivo, IA Lab) ----------
+  // ---------- Resolución del juego ----------
   function solvePuzzle(puzzle, mode) {
-    const p = getProgress(puzzle.id);
+    const p = getProgress(puzzle);
     p.intentos += 1;
     p.resuelto = true;
     p.modo = mode;
+    p.tiempoMs = Date.now() - (p.inicio || Date.now());
+    p.estrellas = p.estrellas || 0;
 
-    if (mode === 'hoy') updateStreak();
+    if (mode === 'hoy' && puzzle.fecha === todayKey()) updateStreak();
     inc('resueltos');
     if (p.ayudas === 0) inc('sinAyuda');
     if (p.intentos === 1) inc('primerIntento');
@@ -239,14 +258,83 @@
     saveState();
   }
 
-  function renderBoard(root, puzzle, { mode = 'hoy' } = {}) {
+  // Colorea la pista según su desglose (definición, indicador, material)
+  function marcarPista(pista, d = {}) {
+    const lower = pista.toLowerCase();
+    const ranges = [['definicion', d.definicion], ['indicador', d.indicador], ['material', d.material]]
+      .filter(([, t]) => t)
+      .map(([k, t]) => ({ k, t, s: lower.indexOf(t.toLowerCase()) }))
+      .filter((r) => r.s >= 0)
+      .map((r) => ({ ...r, e: r.s + r.t.length }))
+      .sort((a, b) => a.s - b.s);
+
+    const nodes = [];
+    let pos = 0;
+    ranges.forEach((r) => {
+      if (r.s < pos) return;
+      if (r.s > pos) nodes.push(pista.slice(pos, r.s));
+      nodes.push(el('mark', { class: `seg seg-${r.k}` }, pista.slice(r.s, r.e)));
+      pos = r.e;
+    });
+    if (pos < pista.length) nodes.push(pista.slice(pos));
+    return nodes;
+  }
+
+  function estrellas(prog, onPick) {
+    return el('div', { class: 'stars', role: 'radiogroup', 'aria-label': 'Valoración del caso' },
+      [1, 2, 3, 4, 5].map((n) => el('button', {
+        class: 'star' + (n <= (prog.estrellas || 0) ? ' is-on' : ''),
+        type: 'button',
+        role: 'radio',
+        'aria-checked': String((prog.estrellas || 0) === n),
+        'aria-label': `${n} de 5`,
+        onclick: () => onPick(n)
+      }, '★')));
+  }
+
+  function panelResolucion(root, puzzle, mode, prog) {
+    const d = puzzle.desglose || {};
+    const rows = [
+      ['definicion', 'Definición', d.definicion],
+      ['indicador', 'Indicador', d.indicador],
+      ['material', 'Material / relleno', d.material]
+    ].filter((r) => r[2]);
+
+    return el('section', { class: 'resolution' },
+      el('p', { class: 'eyebrow', text: 'Cómo se resuelve' }),
+      rows.length
+        ? el('dl', { class: 'breakdown' }, rows.map(([k, label, t]) =>
+            el('div', { class: 'bd-row' },
+              el('dt', { class: `bd-${k}`, text: label }),
+              el('dd', { text: t }))))
+        : null,
+      !d.indicador ? el('p', { class: 'muted small', text: 'Definición directa: el enunciado completo apunta a la respuesta.' }) : null,
+      el('div', { class: 'stats' },
+        el('span', { text: `Tiempo ${fmtTiempo(prog.tiempoMs)}` }),
+        el('span', { text: `Pistas ${prog.ayudas}/${MAX_PISTAS}` })),
+      el('div', { class: 'rating' },
+        el('p', { class: 'label', text: '¿Qué te pareció este caso?' }),
+        estrellas(prog, (n) => {
+          prog.estrellas = n;
+          saveState();
+          renderBoard(root, puzzle, mode);
+        }))
+    );
+  }
+
+  // ---------- Tablero (Hoy, Archivo, IA Lab) ----------
+  function renderBoard(root, puzzle, mode = 'hoy') {
     const len = puzzle.longitud;
     const answer = normalize(puzzle.respuesta);
-    const prog = getProgress(puzzle.id);
-    const boxes = [];
+    const prog = getProgress(puzzle);
+    if (!prog.resuelto && !prog.inicio) {
+      prog.inicio = Date.now();
+      saveState();
+    }
 
+    const boxes = [];
     const feedback = el('p', { class: 'feedback', role: 'status', 'aria-live': 'polite' });
-    const setFeedback = (msg, tone = '') => { feedback.textContent = msg; feedback.dataset.tone = tone; };
+    const say = (msg, tone = '') => { feedback.textContent = msg; feedback.dataset.tone = tone; };
     const lettersWrap = el('div', { class: 'letters', role: 'group', 'aria-label': `Respuesta de ${len} letras` });
 
     const moveFocus = (from, dir) => {
@@ -255,41 +343,48 @@
       if (j >= 0 && j < len) { boxes[j].focus(); boxes[j].select(); }
     };
 
+    const helpBtn = el('button', { class: 'btn btn-ghost', type: 'button', onclick: () => help() }, 'Dame una ayuda');
+    const checkBtn = el('button', { class: 'btn btn-primary', type: 'button', onclick: () => check() }, 'Comprobar');
+
+    function syncHelp() {
+      const p = getProgress(puzzle);
+      helpBtn.textContent = `Dame una ayuda (${p.ayudas}/${MAX_PISTAS})`;
+      helpBtn.disabled = p.resuelto || p.ayudas >= MAX_PISTAS;
+    }
+
     function check() {
-      const p = getProgress(puzzle.id);
+      const p = getProgress(puzzle);
       if (p.resuelto) return;
       const guess = boxes.map((b) => normalize(b.value)).join('');
-      if (guess.length < len) {
-        setFeedback('Completa todas las letras antes de comprobar.', 'warn');
-        return;
-      }
+      if (guess.length < len) return say('Completa todas las letras antes de comprobar.', 'warn');
       if (guess === answer) {
         solvePuzzle(puzzle, mode);
-        renderBoard(root, puzzle, { mode });
+        renderBoard(root, puzzle, mode);
         updateStreakText();
         return;
       }
       p.intentos += 1;
       saveState();
       lettersWrap.classList.remove('shake');
-      void lettersWrap.offsetWidth; // reinicia la animación
+      void lettersWrap.offsetWidth;
       lettersWrap.classList.add('shake');
-      setFeedback('Aún no es esta. Revisa la pista y prueba de nuevo.', 'warn');
+      say('Aún no es esta. Revisa la pista y prueba de nuevo.', 'warn');
     }
 
     function help() {
-      const p = getProgress(puzzle.id);
-      if (p.resuelto) return;
-      const idx = Array.from({ length: len }, (_, k) => k).find((k) => !p.revelados.includes(k));
+      const p = getProgress(puzzle);
+      if (p.resuelto || p.ayudas >= MAX_PISTAS) return;
+      const idx = [...Array(len).keys()].find((k) => !p.revelados.includes(k));
       if (idx === undefined) return;
       p.revelados.push(idx);
       p.ayudas += 1;
+      saveState();
       const box = boxes[idx];
       box.value = answer[idx];
       box.readOnly = true;
       box.classList.add('is-revealed');
-      setFeedback(`Letra ${idx + 1} revelada.`);
-      helpBtn.disabled = p.revelados.length >= len;
+      say(`Pista ${p.ayudas}/${MAX_PISTAS}: letra ${idx + 1} revelada.`);
+      syncHelp();
       inc('ayudas');
       moveFocus(idx, 1);
     }
@@ -298,7 +393,7 @@
       const revealed = prog.revelados.includes(i);
       const locked = revealed || prog.resuelto;
       const box = el('input', {
-        class: 'letter' + (revealed ? ' is-revealed' : ''),
+        class: 'letter' + (revealed ? ' is-revealed' : '') + (prog.resuelto ? ' is-solved' : ''),
         type: 'text',
         maxlength: '1',
         inputmode: 'text',
@@ -348,24 +443,22 @@
       lettersWrap.append(box);
     }
 
-    const checkBtn = el('button', { class: 'btn btn-primary', type: 'button', onclick: check }, 'Comprobar');
-    const helpBtn = el('button', { class: 'btn btn-ghost', type: 'button', onclick: help }, 'Dame una ayuda');
+    syncHelp();
     checkBtn.disabled = prog.resuelto;
-    helpBtn.disabled = prog.resuelto || prog.revelados.length >= len;
 
-    if (prog.resuelto) {
-      const n = prog.intentos;
-      setFeedback(`Resuelto${n ? ` en ${n} ${n === 1 ? 'intento' : 'intentos'}` : ''}.`, 'ok');
-    }
+    if (prog.resuelto) say('Caso resuelto.', 'ok');
 
+    const tipoLabel = puzzle.tipo === 'ia' ? 'IA' : 'Comunidad';
+    const dif = DIF[puzzle.dificultad];
     root.replaceChildren(
-      el('span', { class: 'tag', text: puzzle.tipo === 'ia' ? 'IA' : 'Comunidad' }),
+      el('span', { class: 'tag', text: dif ? `${tipoLabel} · ${dif}` : tipoLabel }),
       el('p', { class: 'clue-row' },
-        el('span', { class: 'clue', text: puzzle.pista }),
+        el('span', { class: 'clue' }, prog.resuelto ? marcarPista(puzzle.pista, puzzle.desglose) : puzzle.pista),
         el('span', { class: 'length', text: `(${len})` })),
       lettersWrap,
-      el('div', { class: 'actions' }, helpBtn, checkBtn),
-      feedback
+      prog.resuelto ? null : el('div', { class: 'actions' }, helpBtn, checkBtn),
+      feedback,
+      prog.resuelto ? panelResolucion(root, puzzle, mode, prog) : null
     );
   }
 
@@ -375,7 +468,7 @@
   function renderHoy() {
     const root = $('#hoy-root');
     const today = todayKey();
-    const puzzle = getDailyPuzzle(today);
+    const puzzle = getPuzzleForDate(today);
     const boardEl = el('div', { class: 'board' });
 
     root.replaceChildren(
@@ -388,7 +481,7 @@
         el('span', { class: 'time', 'data-countdown': '', text: '--:--:--' }))
     );
 
-    renderBoard(boardEl, puzzle, { mode: 'hoy' });
+    renderBoard(boardEl, puzzle, 'hoy');
     updateCountdown();
   }
 
@@ -401,39 +494,47 @@
   // ---------- Vista: Archivo ----------
   let archivoSel = null;
 
+  const fragmento = (t) => (t.length > 52 ? `${t.slice(0, 52).trimEnd()}…` : t);
+
   function renderArchivo() {
     const root = $('#archivo-root');
-    const past = sortedPuzzles().filter((p) => p.fecha < todayKey()).reverse();
+    const hoy = todayKey();
+    const items = [];
+    for (let k = addDays(hoy, -1); k >= ARCHIVE_START; k = addDays(k, -1)) {
+      const p = getPuzzleForDate(k);
+      items.push({ k, p, prog: peekProgress(p.id) });
+    }
+
     const children = [
       el('header', { class: 'section-head' },
         el('p', { class: 'eyebrow', text: 'Archivo' }),
-        el('p', { class: 'muted', text: 'Juega acertijos anteriores. No suman a tu racha.' }))
+        el('p', { class: 'muted', text: 'Desde el 20 de octubre. Jugar aquí registra tu tiempo, pero no suma a la racha.' }))
     ];
 
-    if (!past.length) {
-      children.push(el('p', { class: 'muted', text: 'Todavía no hay acertijos archivados.' }));
+    if (!items.length) {
+      children.push(el('p', { class: 'muted', text: 'El archivo empieza el 20 de octubre. Vuelve mañana.' }));
     } else {
-      children.push(el('ul', { class: 'archive-list' }, past.map((p) => {
-        const prog = getProgress(p.id);
-        const cls = ['archive-item', prog.resuelto && 'is-done', archivoSel === p.id && 'is-active']
+      children.push(el('ul', { class: 'archive-list' }, items.map(({ k, p, prog }) => {
+        const cls = ['archive-item', prog.resuelto && 'is-done', archivoSel === k && 'is-active']
           .filter(Boolean).join(' ');
         return el('li', {},
           el('button', {
             class: cls,
             type: 'button',
-            'aria-pressed': String(archivoSel === p.id),
-            onclick: () => { archivoSel = p.id; renderArchivo(); }
+            'aria-pressed': String(archivoSel === k),
+            onclick: () => { archivoSel = k; renderArchivo(); }
           },
-            el('span', { class: 'archive-date', text: formatDateShort(p.fecha) }),
-            el('span', { class: 'archive-meta', text: `${p.longitud} letras · ${p.tipo === 'ia' ? 'IA' : 'Comunidad'}` }),
-            el('span', { class: 'archive-status', text: prog.resuelto ? 'Resuelto' : 'Pendiente' })));
+            el('span', { class: 'archive-date', text: formatDateShort(k) }),
+            el('span', { class: 'archive-frag', text: fragmento(p.pista) }),
+            el('span', { class: 'archive-dif', text: DIF[p.dificultad] || '' }),
+            el('span', { class: 'archive-status', text: prog.resuelto ? 'Resuelto' : 'Sin jugar' })));
       })));
 
-      const sel = past.find((p) => p.id === archivoSel);
+      const sel = items.find((i) => i.k === archivoSel);
       if (sel) {
         const boardEl = el('div', { class: 'board' });
         children.push(boardEl);
-        renderBoard(boardEl, sel, { mode: 'archivo' });
+        renderBoard(boardEl, sel.p, 'archivo');
       }
     }
 
@@ -526,8 +627,7 @@
         el('li', { text: 'Escribe la respuesta completa y pulsa Enter.' })),
       el('p', { class: 'muted', text: `Récord local: ${best} ${best === 1 ? 'acierto' : 'aciertos'}` }),
       el('div', { class: 'actions' },
-        el('button', { class: 'btn btn-primary', type: 'button', onclick: startRush }, 'Empezar'))
-    );
+        el('button', { class: 'btn btn-primary', type: 'button', onclick: startRush }, 'Empezar')));
   }
 
   function rushPlaying() {
@@ -551,8 +651,7 @@
       input,
       el('div', { class: 'actions' },
         el('button', { class: 'btn btn-ghost', type: 'button', onclick: skipRush }, 'Saltar (−2 s)'),
-        el('button', { class: 'btn btn-primary', type: 'button', onclick: submitRush }, 'Responder'))
-    );
+        el('button', { class: 'btn btn-primary', type: 'button', onclick: submitRush }, 'Responder')));
   }
 
   function rushResults() {
@@ -570,8 +669,7 @@
           el('span', { text: e.n }),
           el('span', { text: String(e.p) })))),
       el('div', { class: 'actions' },
-        el('button', { class: 'btn btn-primary', type: 'button', onclick: startRush }, 'Otra partida'))
-    );
+        el('button', { class: 'btn btn-primary', type: 'button', onclick: startRush }, 'Otra partida')));
   }
 
   function renderRush() {
@@ -593,7 +691,7 @@
 
     return el('article', { class: 'card' + (unlocked ? ' is-unlocked' : '') },
       el('div', { class: 'card-top' },
-        el('span', { class: 'cat', text: a.cat }),
+        el('span', { text: a.cat }),
         el('span', { class: 'lock', 'aria-label': unlocked ? 'Desbloqueado' : 'Bloqueado', text: unlocked ? '✦' : '🔒' })),
       el('h3', { class: 'card-title', text: hidden ? 'Secreto' : a.titulo }),
       el('p', { class: 'card-desc', text: hidden ? '???' : a.descripcion }),
@@ -604,8 +702,7 @@
         'aria-valuemax': String(a.meta),
         'aria-valuenow': String(shown)
       }, el('span', { style: `width:${pct}%` })),
-      el('p', { class: 'card-count', text: hidden ? '—' : `${shown}/${a.meta}` })
-    );
+      el('p', { class: 'card-count', text: hidden ? '—' : `${shown}/${a.meta}` }));
   }
 
   function renderLogros() {
@@ -622,8 +719,81 @@
           'aria-pressed': String(achFilter === cat),
           onclick: () => { achFilter = cat; renderLogros(); }
         }, cat))),
-      el('div', { class: 'grid' }, list.map(achievementCard))
-    );
+      el('div', { class: 'grid' }, list.map(achievementCard)));
+  }
+
+  // ---------- Vista: Perfil ----------
+  const initial = (name) => (name || 'J').trim().charAt(0).toUpperCase();
+
+  function renderPerfil() {
+    const root = $('#perfil-root');
+    const today = todayKey();
+    const progs = Object.values(state.progreso);
+    const resueltos = progs.filter((p) => p.resuelto);
+    const total = resueltos.length;
+    const sinAyuda = resueltos.filter((p) => !p.ayudas).length;
+    const pct = total ? Math.round((sinAyuda / total) * 100) : 0;
+    const rushN = state.contadores.rushPartidas || 0;
+    const racha = effectiveStreak();
+
+    const porFecha = {};
+    progs.forEach((p) => {
+      if (!p.fecha) return;
+      const e = (porFecha[p.fecha] ||= { jugado: false, resuelto: false });
+      if (p.resuelto) e.resuelto = true;
+      if (p.resuelto || p.intentos > 0) e.jugado = true;
+    });
+
+    const dow = utcNoon(today).getUTCDay();
+    const lunes = addDays(today, -((dow + 6) % 7));
+    const semana = Array.from({ length: 7 }, (_, i) => {
+      const k = addDays(lunes, i);
+      const cls = 'day' + (porFecha[k]?.jugado ? ' is-played' : '') + (k === today ? ' is-today' : '');
+      return el('div', { class: cls, title: formatDateShort(k) },
+        el('span', { text: SEMANA[i] }),
+        el('span', { class: 'day-dot' }));
+    });
+
+    const heat = Array.from({ length: 30 }, (_, i) => {
+      const k = addDays(today, i - 29);
+      const hit = porFecha[k]?.resuelto;
+      return el('span', {
+        class: 'hm' + (hit ? ' is-on' : ''),
+        title: `${formatDateShort(k)}${hit ? ' · resuelto' : ''}`
+      });
+    });
+
+    const metric = (value, label) => el('div', { class: 'metric' },
+      el('span', { class: 'metric-value', text: String(value) }),
+      el('span', { class: 'metric-label', text: label }));
+
+    root.replaceChildren(
+      el('header', { class: 'profile-head' },
+        el('div', { class: 'avatar', 'aria-hidden': 'true', text: initial(state.perfil.nombre) }),
+        el('div', { class: 'profile-id' },
+          el('p', { class: 'eyebrow', text: 'Perfil' }),
+          el('input', {
+            class: 'name-input',
+            value: state.perfil.nombre,
+            maxlength: '24',
+            'aria-label': 'Nombre de usuario',
+            oninput: (e) => {
+              state.perfil.nombre = e.target.value.trim() || 'Jugador';
+              saveState();
+              $('.avatar').textContent = initial(state.perfil.nombre);
+            }
+          }))),
+      el('section', { class: 'streak-big' },
+        el('span', { class: 'streak-num', text: `🔥 ${racha}` }),
+        el('span', { class: 'muted', text: racha === 1 ? 'día de racha actual' : 'días de racha actual' })),
+      el('div', { class: 'week', role: 'group', 'aria-label': 'Días jugados esta semana' }, semana),
+      el('div', { class: 'metrics' },
+        metric(total, 'Casos resueltos'),
+        metric(`${pct}%`, 'Acierto sin pistas'),
+        metric(rushN, 'Partidas Contrarreloj')),
+      el('h3', { class: 'h3', text: 'Últimos 30 días' }),
+      el('div', { class: 'heatmap', role: 'img', 'aria-label': 'Mapa de actividad de los últimos 30 días' }, heat),
+      el('p', { class: 'hint', text: 'Verde: caso resuelto · Gris: pendiente o no jugado' }));
   }
 
   // ---------- Vista: IA Lab & Comunidad ----------
@@ -661,14 +831,7 @@
         if (pista.length < 12) return say('La pista necesita al menos 12 caracteres.');
         if (respuesta.length < 3 || respuesta.length > 12) return say('La solución debe tener entre 3 y 12 letras.');
 
-        state.propuestas.push({
-          pista,
-          respuesta,
-          longitud: respuesta.length,
-          tipo: 'comunidad',
-          fecha: todayKey(),
-          estado: 'simulada'
-        });
+        state.propuestas.push({ pista, respuesta, longitud: respuesta.length, tipo: 'comunidad', fecha: todayKey(), estado: 'simulada' });
         inc('propuestas');
         renderComunidad();
         showToast('Propuesta enviada. Gracias por tu acertijo.');
@@ -683,20 +846,18 @@
       el('p', { class: 'hint', text: 'La longitud se calcula automáticamente. Solo letras, sin espacios.' }),
       feedback,
       el('div', { class: 'actions' },
-        el('button', { class: 'btn btn-primary', type: 'submit' }, 'Enviar propuesta'))
-    );
+        el('button', { class: 'btn btn-primary', type: 'submit' }, 'Enviar propuesta')));
 
     root.replaceChildren(
       el('header', { class: 'section-head' },
         el('p', { class: 'eyebrow', text: 'Comunidad' }),
         el('p', { class: 'muted', text: 'Propón un críptico. La propuesta se simula y no se publica.' }),
         el('p', { class: 'muted small', text: `Propuestas enviadas: ${state.propuestas.length}` })),
-      form
-    );
+      form);
   }
 
-  function revealCapa2(id) {
-    const p = getProgress(id);
+  function revealCapa2(puzzle) {
+    const p = getProgress(puzzle);
     if (p.capa2) return;
     p.capa2 = true;
     inc('capasUsadas');
@@ -707,9 +868,9 @@
   function renderIA() {
     const root = $('#lab-ia-root');
     const cards = PUZZLES.filter((p) => p.tipo === 'ia').map((p) => {
-      const prog = getProgress(p.id);
+      const prog = getProgress(p);
       const boardEl = el('div', { class: 'board' });
-      renderBoard(boardEl, p, { mode: 'lab' });
+      renderBoard(boardEl, p, 'lab');
 
       return el('article', { class: 'lab-card' },
         el('div', { class: 'layer-block' },
@@ -719,18 +880,16 @@
           ? el('div', { class: 'layer-block' },
               el('span', { class: 'tag', text: 'Capa 2 · Estructura' }),
               el('p', { class: 'layer', text: p.capas.estructura }))
-          : el('button', { class: 'btn btn-ghost btn-sm', type: 'button', onclick: () => revealCapa2(p.id) },
+          : el('button', { class: 'btn btn-ghost btn-sm', type: 'button', onclick: () => revealCapa2(p) },
               'Revelar capa estructural'),
-        boardEl
-      );
+        boardEl);
     });
 
     root.replaceChildren(
       el('header', { class: 'section-head' },
         el('p', { class: 'eyebrow', text: 'IA Lab' }),
         el('p', { class: 'muted', text: 'Acertijos con pistas en dos capas: semántica y estructural.' })),
-      ...cards
-    );
+      ...cards);
   }
 
   function setLabSub(sub) {
@@ -743,6 +902,264 @@
     $$('[data-sub-panel]').forEach((p) => { p.hidden = p.dataset.subPanel !== sub; });
     if (sub === 'comunidad') renderComunidad();
     else renderIA();
+  }
+
+  // ---------- Vista: Modo 1v1 ----------
+  const vs = {
+    fase: 'menu', rol: null, codigo: '', msg: '', conectado: false,
+    puzzles: [], done: 0, rival: 0, t0: 0, cuenta: 0, ms: 0,
+    resultado: null, registrado: false, timer: null
+  };
+
+  function vsReset() {
+    clearTimeout(vs.timer);
+    P2P.cerrar();
+    Object.assign(vs, {
+      fase: 'menu', rol: null, codigo: '', msg: '', conectado: false,
+      puzzles: [], done: 0, rival: 0, t0: 0, cuenta: 0, ms: 0,
+      resultado: null, registrado: false, timer: null
+    });
+    renderVersus();
+  }
+
+  function finVersus(resultado, ms = 0) {
+    if (vs.fase === 'fin') return;
+    clearTimeout(vs.timer);
+    vs.fase = 'fin';
+    vs.resultado = resultado;
+    vs.ms = ms;
+    if (!vs.registrado) {
+      vs.registrado = true;
+      if (resultado === 'victoria' || resultado === 'rival-abandono') state.versus.victorias += 1;
+      else if (resultado === 'derrota') state.versus.derrotas += 1;
+      saveState();
+    }
+    renderVersus();
+  }
+
+  function empezarCuenta() {
+    vs.fase = 'cuenta';
+    vs.cuenta = VS_COUNTDOWN;
+    renderVersus();
+    const paso = () => {
+      vs.cuenta -= 1;
+      if (vs.cuenta > 0) {
+        renderVersus();
+        vs.timer = setTimeout(paso, 1000);
+      } else {
+        vs.fase = 'juego';
+        vs.done = 0;
+        vs.rival = 0;
+        vs.t0 = Date.now();
+        renderVersus();
+      }
+    };
+    vs.timer = setTimeout(paso, 1000);
+  }
+
+  const vsCallbacks = {
+    onCodigo(c) { vs.codigo = c; renderVersus(); },
+    onEstado(txt, ok) {
+      vs.conectado = ok;
+      vs.msg = ok
+        ? (vs.rol === 'host' ? 'Rival conectado. Ya puedes iniciar la partida.' : 'Conectado. Esperando a que el anfitrión inicie…')
+        : txt;
+      if (vs.fase === 'sala') renderVersus();
+    },
+    onError(txt) {
+      vs.msg = txt;
+      if (vs.fase === 'sala') renderVersus();
+    },
+    onCerrado() {
+      if (vs.fase === 'juego' || vs.fase === 'cuenta') return finVersus('desconexion');
+      vs.conectado = false;
+      vs.msg = 'La conexión con el rival se cerró.';
+      if (vs.fase === 'sala') renderVersus();
+    },
+    onMensaje(m) {
+      if (m.type === 'start' && vs.rol === 'guest') {
+        vs.puzzles = m.puzzles;
+        empezarCuenta();
+      } else if (m.type === 'progress') {
+        vs.rival = m.done;
+        if (vs.fase === 'juego') updateVsBars();
+      } else if (m.type === 'win' && vs.fase === 'juego') {
+        finVersus('derrota', m.ms);
+      } else if (m.type === 'bye' && (vs.fase === 'juego' || vs.fase === 'cuenta')) {
+        finVersus('rival-abandono');
+      }
+    }
+  };
+
+  function crearSala() {
+    vs.fase = 'sala';
+    vs.rol = 'host';
+    vs.codigo = '';
+    vs.msg = 'Creando sala…';
+    renderVersus();
+    P2P.crear(vsCallbacks);
+  }
+
+  function unirseSala() {
+    const code = ($('#vs-code')?.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (code.length !== 4) {
+      vs.msg = 'El código tiene 4 caracteres.';
+      return renderVersus();
+    }
+    vs.fase = 'sala';
+    vs.rol = 'guest';
+    vs.codigo = code;
+    vs.msg = 'Conectando…';
+    renderVersus();
+    P2P.unirse(code, vsCallbacks);
+  }
+
+  function iniciarSala() {
+    // Ambos reciben los mismos 5 crípticos: los genera el anfitrión y se envían por la conexión.
+    vs.puzzles = Array.from({ length: VS_LEN }, (_, i) => GeneradorProceduralIA(`${vs.codigo}-${i}`));
+    P2P.enviar({ type: 'start', puzzles: vs.puzzles });
+    empezarCuenta();
+  }
+
+  function vsEnviar() {
+    if (vs.fase !== 'juego') return;
+    const input = $('#vs-input');
+    if (!input) return;
+    const g = normalize(input.value);
+    if (!g) return;
+
+    if (g === normalize(vs.puzzles[vs.done].respuesta)) {
+      vs.done += 1;
+      P2P.enviar({ type: 'progress', done: vs.done });
+      if (vs.done >= VS_LEN) {
+        const ms = Date.now() - vs.t0;
+        P2P.enviar({ type: 'win', ms });
+        return finVersus('victoria', ms);
+      }
+      renderVersus();
+    } else {
+      const fb = $('#vs-feedback');
+      if (fb) fb.textContent = 'No es esta. Sigue intentándolo.';
+      input.select();
+    }
+  }
+
+  function vsAbandonar() {
+    if (vs.fase !== 'juego' && vs.fase !== 'cuenta') return vsReset();
+    P2P.enviar({ type: 'bye' });
+    setTimeout(vsReset, 200);
+  }
+
+  function updateVsBars() {
+    [['me', vs.done], ['rival', vs.rival]].forEach(([k, n]) => {
+      const t = $(`[data-vs-n="${k}"]`);
+      if (t) t.textContent = `${n}/${VS_LEN}`;
+      const b = $(`[data-vs-bar="${k}"]`);
+      if (b) b.style.width = `${(n / VS_LEN) * 100}%`;
+    });
+  }
+
+  function vsBar(label, key, n) {
+    return el('div', { class: 'vs-row' },
+      el('div', { class: 'vs-meta' },
+        el('span', { text: label }),
+        el('span', { 'data-vs-n': key, text: `${n}/${VS_LEN}` })),
+      el('div', { class: 'bar' },
+        el('span', { 'data-vs-bar': key, style: `width:${(n / VS_LEN) * 100}%` })));
+  }
+
+  function vsMenu() {
+    return el('div', {},
+      el('div', { class: 'vs-grid' },
+        el('div', { class: 'vs-card' },
+          el('h3', { class: 'h3', text: 'Crear sala' }),
+          el('p', { class: 'muted', text: 'Genera un código corto y compártelo con tu rival.' }),
+          el('div', { class: 'actions' },
+            el('button', { class: 'btn btn-primary', type: 'button', onclick: crearSala }, 'Crear sala'))),
+        el('div', { class: 'vs-card' },
+          el('h3', { class: 'h3', text: 'Unirse' }),
+          el('input', {
+            id: 'vs-code',
+            class: 'field caps',
+            maxlength: '4',
+            placeholder: 'Código',
+            autocomplete: 'off',
+            autocapitalize: 'characters',
+            spellcheck: 'false',
+            onkeydown: (e) => { if (e.key === 'Enter') unirseSala(); }
+          }),
+          el('div', { class: 'actions' },
+            el('button', { class: 'btn btn-ghost', type: 'button', onclick: unirseSala }, 'Unirse')))),
+      vs.msg ? el('p', { class: 'feedback', text: vs.msg }) : null,
+      el('p', { class: 'hint', text: `Victorias ${state.versus.victorias} · Derrotas ${state.versus.derrotas}` }),
+      el('p', { class: 'hint', text: 'La partida viaja directamente entre navegadores (WebRTC). El servidor público de PeerJS solo ayuda a establecer la conexión.' }));
+  }
+
+  function vsSala() {
+    return el('div', { class: 'vs-card vs-center' },
+      el('p', { class: 'eyebrow', text: vs.rol === 'host' ? 'Código de sala' : 'Sala' }),
+      vs.codigo ? el('p', { class: 'vs-code', text: vs.codigo }) : null,
+      el('p', { class: 'muted', text: vs.msg }),
+      vs.rol === 'host' && vs.conectado
+        ? el('div', { class: 'actions' }, el('button', { class: 'btn btn-primary', type: 'button', onclick: iniciarSala }, 'Iniciar partida'))
+        : null,
+      el('div', { class: 'actions' }, el('button', { class: 'btn btn-ghost', type: 'button', onclick: vsReset }, 'Salir')));
+  }
+
+  function vsCuenta() {
+    return el('div', { class: 'vs-card vs-center' },
+      el('p', { class: 'vs-count', text: String(vs.cuenta) }),
+      el('p', { class: 'muted', text: 'Prepárate. Los cinco casos son los mismos para ambos.' }));
+  }
+
+  function vsJuego() {
+    const actual = vs.puzzles[vs.done];
+    return el('div', { class: 'rush' },
+      el('div', { class: 'vs-bars' }, vsBar('Tú', 'me', vs.done), vsBar('Rival', 'rival', vs.rival)),
+      el('p', { class: 'eyebrow', text: `Caso ${vs.done + 1} de ${VS_LEN}` }),
+      el('p', { class: 'clue', text: actual.pista }),
+      el('input', {
+        id: 'vs-input',
+        class: 'rush-input',
+        type: 'text',
+        autocomplete: 'off',
+        autocapitalize: 'characters',
+        spellcheck: 'false',
+        'aria-label': 'Tu respuesta',
+        onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); vsEnviar(); } }
+      }),
+      el('p', { id: 'vs-feedback', class: 'feedback', role: 'status' }),
+      el('div', { class: 'actions' },
+        el('button', { class: 'btn btn-primary', type: 'button', onclick: vsEnviar }, 'Responder'),
+        el('button', { class: 'btn btn-ghost', type: 'button', onclick: vsAbandonar }, 'Abandonar')));
+  }
+
+  function vsFin() {
+    const gana = vs.resultado === 'victoria' || vs.resultado === 'rival-abandono';
+    const titulo = gana ? 'Victoria' : vs.resultado === 'derrota' ? 'Derrota' : 'Partida anulada';
+    const detalle = {
+      victoria: 'Has resuelto los cinco casos primero.',
+      derrota: 'Tu rival ha resuelto los cinco casos primero.',
+      'rival-abandono': 'Tu rival abandonó la partida.',
+      desconexion: 'Se perdió la conexión con el rival. La partida no cuenta.'
+    }[vs.resultado];
+    return el('div', { class: 'vs-card vs-center' },
+      el('p', { class: 'vs-result', text: titulo }),
+      el('p', { class: 'muted', text: detalle }),
+      vs.ms ? el('p', { class: 'hint', text: `Tu tiempo: ${fmtTiempo(vs.ms)}` }) : null,
+      el('div', { class: 'actions' },
+        el('button', { class: 'btn btn-primary', type: 'button', onclick: vsReset }, 'Volver al menú')));
+  }
+
+  function renderVersus() {
+    const root = $('#versus-root');
+    const body = { menu: vsMenu, sala: vsSala, cuenta: vsCuenta, juego: vsJuego, fin: vsFin }[vs.fase]();
+    root.replaceChildren(
+      el('header', { class: 'section-head' },
+        el('p', { class: 'eyebrow', text: 'Modo 1v1' }),
+        el('p', { class: 'muted', text: 'Dos navegadores, una sala. Cinco crípticos, un ganador.' })),
+      body);
+    if (vs.fase === 'juego') $('#vs-input')?.focus();
   }
 
   // ---------- Modal ----------
@@ -770,11 +1187,13 @@
       t.setAttribute('aria-selected', String(on));
     });
 
-    if (name === 'hoy') updateStreakText();
+    if (name === 'hoy') { renderHoy(); }
     if (name === 'archivo') renderArchivo();
     if (name === 'rush') renderRush();
     if (name === 'logros') renderLogros();
+    if (name === 'perfil') renderPerfil();
     if (name === 'lab') setLabSub(labSub);
+    if (name === 'versus') renderVersus();
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
