@@ -318,6 +318,7 @@
               el('dd', { text: t }))))
         : null,
       !d.indicador ? el('p', { class: 'muted small', text: 'Definición directa: el enunciado completo apunta a la respuesta.' }) : null,
+      puzzle.explicacion ? el('p', { class: 'explain', text: puzzle.explicacion }) : null,
       el('div', { class: 'stats' },
         el('span', { text: `Tiempo ${fmtTiempo(prog.tiempoMs)}` }),
         el('span', { text: `Pistas ${prog.ayudas}/${MAX_PISTAS}` })),
@@ -460,7 +461,8 @@
 
     const tipoLabel = puzzle.tipo === 'ia' ? 'IA' : 'Comunidad';
     const dif = DIF[puzzle.dificultad];
-    root.replaceChildren(
+    // replaceChildren nativo convierte null en el texto "null": se filtran los huecos.
+    root.replaceChildren(...[
       el('span', { class: 'tag', text: dif ? `${tipoLabel} · ${dif}` : tipoLabel }),
       el('p', { class: 'clue-row' },
         el('span', { class: 'clue' }, prog.resuelto ? marcarPista(puzzle.pista, puzzle.desglose) : puzzle.pista),
@@ -469,7 +471,7 @@
       prog.resuelto ? null : el('div', { class: 'actions' }, helpBtn, checkBtn),
       feedback,
       prog.resuelto ? panelResolucion(root, puzzle, mode, prog) : null
-    );
+    ].filter(Boolean));
   }
 
   // ---------- Vista: Hoy ----------

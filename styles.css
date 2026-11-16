@@ -580,3 +580,4 @@ mark { background: none; color: inherit; padding: 0 0.08em; }
 .share-btn { margin-top: 16px; }
 .profile-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
 .hint + .h3 { margin-top: 28px; }
+.explain { margin-top: 12px; font-style: italic; }
