@@ -2,15 +2,17 @@
 
 Un críptico al día. SPA sin backend ni build, con progreso en `localStorage`.
 
-🔗 **Demo:** https://jheremysebastian17.github.io/thecrypticclub/
+🔗 **Demo:** https://jheremysebastian17.github.io/TheCrypticClub/
 
 ## Características
 
 - **Reto diario** con cuenta regresiva a medianoche (hora de Madrid).
 - **Resolución guiada:** letras en verde y pista desglosada en definición, indicador y material.
 - **Archivo** desde el 20 de octubre, jugable sin sumar a la racha.
+- **Compartir resultado:** copia tu tiempo, pistas usadas y racha sin revelar la respuesta.
 - **Contrarreloj** de 60 segundos con récord local.
 - **Logros** (22) y **perfil** con racha, actividad semanal y mapa de 30 días.
+- **Copia de seguridad:** exporta e importa tu progreso como archivo JSON desde el perfil.
 - **IA Lab y Comunidad**, con acertijos en dos capas y formulario de propuestas.
 - **Modo 1v1** por WebRTC (PeerJS), sin servidor propio.
 
@@ -28,8 +30,8 @@ thecrypticclub/
 ## Ejecutar en local
 
 ```bash
-git clone https://github.com/jheremysebastian17/thecrypticclub.git
-cd thecrypticclub
+git clone https://github.com/jheremysebastian17/TheCrypticClub.git
+cd TheCrypticClub
 python -m http.server 8000
 ```
 
@@ -46,7 +48,7 @@ Abre `http://localhost:8000`.
 
 ## Persistencia
 
-Todo se guarda en `localStorage` bajo `the-cryptic-club:v1`. Borrar los datos del sitio reinicia el progreso; no hay sincronización entre dispositivos.
+Todo se guarda en `localStorage` bajo `the-cryptic-club:v1`. Borrar los datos del sitio reinicia el progreso. No hay sincronización automática entre dispositivos, pero puedes exportar el progreso desde el perfil e importarlo en otro navegador.
 
 ## Limitaciones
 

@@ -575,3 +575,8 @@ mark { background: none; color: inherit; padding: 0 0.08em; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Compartir resultado y copia de seguridad */
+.share-btn { margin-top: 16px; }
+.profile-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.hint + .h3 { margin-top: 28px; }
