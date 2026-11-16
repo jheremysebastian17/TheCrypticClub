@@ -292,6 +292,15 @@
       }, '★')));
   }
 
+  function compartirResultado(puzzle, prog) {
+    // Sin la respuesta: el texto no debe destripar el caso a quien aún no lo ha jugado.
+    const pistas = prog.ayudas ? '💡'.repeat(prog.ayudas) : 'sin pistas';
+    const texto = `The Cryptic Club · ${formatDateShort(puzzle.fecha)}\n✅ ${fmtTiempo(prog.tiempoMs)} · ${pistas} · 🔥 ${effectiveStreak()}\n${location.origin}${location.pathname}`;
+    navigator.clipboard.writeText(texto).then(
+      () => showToast('Resultado copiado al portapapeles'),
+      () => showToast('No se pudo copiar el resultado'));
+  }
+
   function panelResolucion(root, puzzle, mode, prog) {
     const d = puzzle.desglose || {};
     const rows = [
@@ -309,9 +318,11 @@
               el('dd', { text: t }))))
         : null,
       !d.indicador ? el('p', { class: 'muted small', text: 'Definición directa: el enunciado completo apunta a la respuesta.' }) : null,
+      puzzle.explicacion ? el('p', { class: 'explain', text: puzzle.explicacion }) : null,
       el('div', { class: 'stats' },
         el('span', { text: `Tiempo ${fmtTiempo(prog.tiempoMs)}` }),
         el('span', { text: `Pistas ${prog.ayudas}/${MAX_PISTAS}` })),
+      el('button', { class: 'btn btn-ghost btn-sm share-btn', type: 'button', text: 'Compartir resultado', onclick: () => compartirResultado(puzzle, prog) }),
       el('div', { class: 'rating' },
         el('p', { class: 'label', text: '¿Qué te pareció este caso?' }),
         estrellas(prog, (n) => {
@@ -450,7 +461,8 @@
 
     const tipoLabel = puzzle.tipo === 'ia' ? 'IA' : 'Comunidad';
     const dif = DIF[puzzle.dificultad];
-    root.replaceChildren(
+    // replaceChildren nativo convierte null en el texto "null": se filtran los huecos.
+    root.replaceChildren(...[
       el('span', { class: 'tag', text: dif ? `${tipoLabel} · ${dif}` : tipoLabel }),
       el('p', { class: 'clue-row' },
         el('span', { class: 'clue' }, prog.resuelto ? marcarPista(puzzle.pista, puzzle.desglose) : puzzle.pista),
@@ -459,7 +471,7 @@
       prog.resuelto ? null : el('div', { class: 'actions' }, helpBtn, checkBtn),
       feedback,
       prog.resuelto ? panelResolucion(root, puzzle, mode, prog) : null
-    );
+    ].filter(Boolean));
   }
 
   // ---------- Vista: Hoy ----------
@@ -725,6 +737,27 @@
   // ---------- Vista: Perfil ----------
   const initial = (name) => (name || 'J').trim().charAt(0).toUpperCase();
 
+  function exportarProgreso() {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(state)], { type: 'application/json' }));
+    el('a', { href: url, download: `cryptic-club-${todayKey()}.json` }).click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importarProgreso(file) {
+    file.text().then((texto) => {
+      const s = JSON.parse(texto);
+      // Validación mínima: un JSON cualquiera no debe sustituir el progreso real.
+      const esObjeto = (v) => v && typeof v === 'object' && !Array.isArray(v);
+      const esLista = (v) => v === undefined || Array.isArray(v);
+      if (!esObjeto(s) || !esObjeto(s.progreso) || !esObjeto(s.racha) || !esLista(s.desbloqueados) || !esLista(s.propuestas)) {
+        throw new Error('formato');
+      }
+      if (!confirm('Esto sustituirá tu progreso actual por el de la copia. ¿Continuar?')) return;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+      location.reload(); // recarga para que todas las vistas partan del estado importado
+    }).catch(() => showToast('El archivo no es una copia de progreso válida.'));
+  }
+
   function renderPerfil() {
     const root = $('#perfil-root');
     const today = todayKey();
@@ -793,7 +826,16 @@
         metric(rushN, 'Partidas Contrarreloj')),
       el('h3', { class: 'h3', text: 'Últimos 30 días' }),
       el('div', { class: 'heatmap', role: 'img', 'aria-label': 'Mapa de actividad de los últimos 30 días' }, heat),
-      el('p', { class: 'hint', text: 'Verde: caso resuelto · Gris: pendiente o no jugado' }));
+      el('p', { class: 'hint', text: 'Verde: caso resuelto · Gris: pendiente o no jugado' }),
+      el('h3', { class: 'h3', text: 'Copia de seguridad' }),
+      el('p', { class: 'hint', text: 'Tu progreso se guarda solo en este navegador. Expórtalo para llevarlo a otro dispositivo.' }),
+      el('div', { class: 'profile-actions' },
+        el('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Exportar progreso', onclick: exportarProgreso }),
+        el('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Importar progreso', onclick: () => $('#import-file').click() }),
+        el('input', {
+          id: 'import-file', type: 'file', accept: 'application/json,.json', hidden: true,
+          onchange: (e) => { if (e.target.files[0]) importarProgreso(e.target.files[0]); }
+        })));
   }
 
   // ---------- Vista: IA Lab & Comunidad ----------
